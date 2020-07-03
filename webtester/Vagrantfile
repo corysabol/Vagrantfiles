@@ -1,0 +1,52 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+$script = <<-SHELL
+  apt update
+  apt install -y \
+    i3 \
+    virtualbox-guest-x11 \
+    ubuntu-drivers-common \
+    mesa-utils \
+    mesa-utils-extra \
+    gnupg \
+    xorg \
+    xserver-xorg \
+    wget \
+    unzip \
+    wpasupplicant \
+    xterm \
+    neovim \
+    openjdk-11-jdk
+  git clone https://github.com/corysabol/dotfiles.git
+  mkdir -p /home/vagrant/.config/nvim
+  cp dotfiles/init.vim /home/vagrant/.config/nvim/
+  systemctl set-default graphical.target
+
+  mkdir /opt/burpsuite/
+  curl -fsSL "https://portswigger.net/burp/releases/download?product=community&type=jar" --output /opt/burpsuite/burp.jar
+
+  #wget "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
+  #sudo dpkg -i google-chrome-stable_current_amd64.deb
+  #sudo apt install -y -f
+SHELL
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/ubuntu-18.04"
+
+  config.vm.synced_folder ENV["DATADIR"], "/data"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.name = ENV["VMNAME"]
+    # Display the VirtualBox GUI when booting the machine
+    vb.gui = ENV["GUI"]
+    # Customize the amount of memory on the VM:
+    vb.memory = "4096"
+    vb.customize ["modifyvm", :id, "--vram", "16"]
+    vb.customize ['modifyvm', :id, '--clipboard', 'bidirectional']
+  end
+
+  config.vm.provision "shell", inline: $script
+  config.vm.provision "shell", inline: "echo -e \"#!/bin/bash\njava -jar /opt/burpsuite/burp.jar\" >> /usr/bin/burp && chmod +x /usr/bin/burp"
+  config.vm.provision "shell", inline: "reboot now"
+end

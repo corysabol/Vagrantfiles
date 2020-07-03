@@ -1,0 +1,40 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+$script = <<-SHELL
+  # Environment setup
+  apt update
+  apt install -y lightdm
+  systemctl enable lightdm
+  apt install -y xorg i3 i3status neovim
+  git clone https://github.com/corysabol/dotfiles.git
+  mkdir -p /home/vagrant/.config/nvim
+  cp dotfiles/init.vim /home/vagrant/.config/nvim/
+  # snaps
+  snap install firefox
+  snap install chromium
+  snap install aws-cli --classic
+  snap install docker
+  snap install node --channel=12/stable --classic
+  snap install postman
+  snap install beekeeper-studio
+  # useful docker images to pre-load
+  docker pull mitmproxy/mitmproxy
+  systemctl reboot
+SHELL
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/ubuntu-18.04"
+
+  config.vm.synced_folder ENV["DATADIR"], "/data"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.name = ENV["VMNAME"]
+    # Display the VirtualBox GUI when booting the machine
+    vb.gui = ENV["GUI"]
+    # Customize the amount of memory on the VM:
+    vb.memory = "4096"
+  end
+
+  config.vm.provision "shell", inline: $script
+end
